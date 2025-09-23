@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Art Output</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+            padding: 20px;
+        }
+
+        #asciiContainer {
+            white-space: pre;
+            line-height: 1;
+            font-size: 8px;
+            letter-spacing: 0.5px;
+            text-align: center;
+            border: 1px solid #333;
+            padding: 20px;
+            background: #111;
+            border-radius: 8px;
+            overflow: auto;
+            max-width: 95vw;
+            max-height: 80vh;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        input[type="range"] {
+            width: 200px;
+        }
+
+        .info {
+            color: #888;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>ASCII Art Output</h1>
+    
+    <div class="controls">
+        <label for="fontSizeSlider">Font Size:</label>
+        <input type="range" id="fontSizeSlider" min="4" max="20" value="8">
+        <span id="fontSizeValue">8px</span>
+        <button onclick="clearOutput()">Clear</button>
+        <button onclick="copyToClipboard()">Copy HTML</button>
+    </div>
+
+    <div class="info">
+        Paste your HTML ASCII string below or use the JavaScript console to set it programmatically.
+    </div>
+
+    <div id="asciiContainer">
+        <!-- ASCII art will be displayed here -->
+        <div style="color: #666; text-align: center; padding: 40px;">
+            No ASCII art loaded yet.<br>
+            Use setAsciiArt(htmlString) in console or paste HTML directly.
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('asciiContainer');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+
+        // Font size control
+        fontSizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            container.style.fontSize = size + 'px';
+            fontSizeValue.textContent = size + 'px';
+        });
+
+        // Function to set ASCII art (can be called from console or other scripts)
+        function setAsciiArt(htmlString) {
+            container.innerHTML = htmlString;
+            console.log('ASCII art loaded successfully!');
+        }
+
+        // Function to clear the output
+        function clearOutput() {
+            container.innerHTML = '<div style="color: #666; text-align: center; padding: 40px;">Output cleared.</div>';
+        }
+
+        // Function to copy HTML to clipboard
+        function copyToClipboard() {
+            const htmlContent = container.innerHTML;
+            navigator.clipboard.writeText(htmlContent).then(() => {
+                alert('HTML copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Auto-adjust font size based on content width
+        function autoAdjustFontSize() {
+            const containerWidth = container.offsetWidth;
+            const contentWidth = container.scrollWidth;
+            
+            if (contentWidth > containerWidth) {
+                const currentSize = parseInt(container.style.fontSize) || 8;
+                const newSize = Math.max(4, Math.floor(currentSize * (containerWidth / contentWidth)));
+                container.style.fontSize = newSize + 'px';
+                fontSizeSlider.value = newSize;
+                fontSizeValue.textContent = newSize + 'px';
+            }
+        }
+
+        // Listen for window resize to auto-adjust
+        window.addEventListener('resize', autoAdjustFontSize);
+
+        // Make setAsciiArt globally available
+        window.setAsciiArt = setAsciiArt;
+        
+        console.log('ASCII Output HTML loaded. Use setAsciiArt(htmlString) to display ASCII art.');
+    </script>
+</body>
+</html>

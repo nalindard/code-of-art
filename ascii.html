@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image to Colored ASCII Art</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+
+        #asciiOutput {
+            white-space: pre;
+            line-height: 1;
+            font-size: 8px;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        #imageInput {
+            margin: 20px 0;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+            return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+            if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+                try {
+                    var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                    var firstSheetName = workbook.SheetNames[0];
+                    var worksheet = workbook.Sheets[firstSheetName];
+
+                    // Convert sheet to JSON to filter blank rows
+                    var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                    // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                    var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                    // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                    var headerRowIndex = filteredData.findIndex((row, index) =>
+                        row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                    );
+                    // Fallback
+                    if (headerRowIndex === -1 || headerRowIndex > 25) {
+                        headerRowIndex = 0;
+                    }
+
+                    // Convert filtered JSON back to CSV
+                    var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                    csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                    console.log("CSV: " + csv);
+                    return csv;
+                } catch (e) {
+                    console.error(e);
+                    return "";
+                }
+            }
+            return gk_fileData[filename] || "";
+        }
+    </script>
+
+</head>
+
+<body>
+    <input type="file" id="imageInput" accept="image/*">
+    <pre id="asciiOutput"></pre>
+    <canvas id="canvas"></canvas>
+    <script>
+        const input = document.getElementById('imageInput');
+        const output = document.getElementById('asciiOutput');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // ASCII characters from dense to light for luminance mapping
+        const asciiChars = '@#S%?*+;:,.'.split('');
+        const charLength = asciiChars.length;
+
+        // Handle image upload
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                console.log("Image loaded: " + event.target.result);
+                img.onload = () => processImage(img);
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function processImage(img) {
+            // Set canvas size to image size, adjusted for character aspect ratio
+            const maxWidth = 240; // Max width in characters
+            const charAspectRatio = 1.5; // Adjusted for typical monospaced font
+            const imageAspectRatio = img.height / img.width;
+            const width = Math.min(img.width, maxWidth);
+            const height = Math.floor(width * imageAspectRatio / charAspectRatio);
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw image on canvas
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Get pixel data
+            const imageData = ctx.getImageData(0, 0, width, height).data;
+            let ascii = '';
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    const r = imageData[i];
+                    const g = imageData[i + 1];
+                    const b = imageData[i + 2];
+                    // Calculate luminance
+                    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+                    // Map luminance to ASCII character
+                    const charIndex = Math.floor((1 - luminance / 255) * (charLength - 1));
+                    const char = asciiChars[charIndex];
+                    // Create colored span
+                    ascii += `<span style="color: rgb(${r},${g},${b})">${char}</span>`;
+                }
+                ascii += '\n';
+            }
+            console.log("ASCII: " + ascii);
+
+            // Output ASCII art
+            output.innerHTML = ascii;
+
+            // Adjust font size to fit container if needed
+            const containerWidth = window.innerWidth - 40; // Account for margins
+            const charWidth = 8; // Approximate pixel width per character
+            if (width * charWidth > containerWidth) {
+                const fontSize = Math.floor(containerWidth / width);
+                output.style.fontSize = `${fontSize}px`;
+            }
+        }
+    </script>
+</body>
+
+</html>

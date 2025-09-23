@@ -1,0 +1,19 @@
+{
+  "name": "code-of-art",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "canvas": "^3.2.0",
+    "consola": "^3.4.2"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
