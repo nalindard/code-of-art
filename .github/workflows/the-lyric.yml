@@ -31,4 +31,5 @@ jobs:
           git commit -m "chore: auto update $(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
           Co-authored-by: EDGE <nalindard@gmail.com>" || echo "No changes"
+          git pull --rebase origin main || echo "No remote changes to pull"
           git push origin main
