@@ -1,6 +1,7 @@
 import consola from "consola";
 import { createCanvas, Image } from 'canvas'
-import { writeFileSync } from 'fs'
+import { writeFileSync, mkdirSync } from 'fs'
+import { join } from 'path'
 
 const CONTRIES = {
     AU: "au",
@@ -69,7 +70,78 @@ const getImageData = async (imageUrl: string): Promise<Buffer> => {
     }
 }
 
-const processImage = async (img: Image): Promise<void> => {
+type ProcessImageResult = {
+    htmlString: string;
+    terminalString: string;
+    plainTextString: string;
+}
+
+const sanitizeFileName = (str: string): string => {
+    return str
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, '') // Remove filesystem invalid characters
+        .replace(/\s+/g, '-') // Replace whitespace with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+        .substring(0, 100); // Limit length
+}
+
+const writeAsciiFiles = async (
+    result: ProcessImageResult,
+    date: string,
+    title: string,
+    copyright: string
+): Promise<void> => {
+    try {
+        // Parse date to get year, month, day
+        const dateParts = date.split('-');
+        if (dateParts.length !== 3) {
+            throw new Error(`Invalid date format: ${date}. Expected YYYY-MM-DD`);
+        }
+        const [year, month, day] = dateParts;
+
+        // Create sanitized filename parts
+        const sanitizedTitle = sanitizeFileName(title);
+        const sanitizedCopyright = sanitizeFileName(copyright);
+        const baseFileName = `${sanitizedTitle}-${day}-${sanitizedCopyright}`;
+
+        // Create directory structure: data/year/month/
+        const dirPath = join('data', year!, month!);
+        mkdirSync(dirPath, { recursive: true });
+
+        // Write HTML file
+        const htmlPath = join(dirPath, `${baseFileName}.html`);
+        writeFileSync(htmlPath, result.htmlString);
+
+        // Write plain text file
+        const txtPath = join(dirPath, `${baseFileName}.txt`);
+        const txtContent = `Title: ${title}
+Date: ${date}
+Copyright: ${copyright}
+
+${result.plainTextString}`;
+        writeFileSync(txtPath, txtContent);
+
+        // Write terminal ASCII file (with ANSI codes)
+        const ansiPath = join(dirPath, `${baseFileName}.ansi`);
+        const ansiContent = `Title: ${title}
+Date: ${date}
+Copyright: ${copyright}
+
+${result.terminalString}`;
+        writeFileSync(ansiPath, ansiContent);
+
+        consola.success(`Files written to ${dirPath}:`);
+        consola.info(`- ${baseFileName}.html`);
+        consola.info(`- ${baseFileName}.txt`);
+        consola.info(`- ${baseFileName}.ansi`);
+
+    } catch (error) {
+        consola.error("Failed to write ASCII files:", error);
+        throw error;
+    }
+}
+
+const processImage = async (img: Image, date: string, title: string, copyright: string): Promise<ProcessImageResult> => {
     // ASCII characters from dense to light for luminance mapping
     const asciiChars = '@#S%?*+;:,.'.split('');
     const charLength = asciiChars.length;
@@ -92,8 +164,9 @@ const processImage = async (img: Image): Promise<void> => {
 
     // Get pixel data
     const imageData = ctx.getImageData(0, 0, width, height).data;
-    let ascii = '';
+    let htmlAscii = '';
     let terminalAscii = '';
+    let plainTextAscii = '';
 
     for (let y = 0; y < height; y++) {
         for (let x = 0; x < width; x++) {
@@ -111,67 +184,79 @@ const processImage = async (img: Image): Promise<void> => {
             const char = asciiChars[charIndex];
 
             // Create colored span for HTML
-            ascii += `<span style="color: rgb(${r},${g},${b})">${char}</span>`;
+            htmlAscii += `<span style="color: rgb(${r},${g},${b})">${char}</span>`;
 
             // Create ANSI colored character for terminal
             terminalAscii += `\x1b[38;2;${r};${g};${b}m${char}\x1b[0m`;
+
+            // Create plain text character
+            plainTextAscii += char;
         }
-        ascii += '\n';
+        htmlAscii += '\n';
         terminalAscii += '\n';
+        plainTextAscii += '\n';
     }
 
-    consola.success("HTML ASCII generated");
+    // Create complete HTML content with metadata
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} - ${date}</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .metadata {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #888;
+        }
+        .metadata h1 {
+            color: #fff;
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .metadata p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        #ascii {
+            white-space: pre;
+            line-height: 1;
+            font-size: 8px;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="metadata">
+        <h1>${title}</h1>
+        <p>Date: ${date}</p>
+        <p>Copyright: ${copyright}</p>
+    </div>
+    <div id="ascii">${htmlAscii}</div>
+</body>
+</html>`;
+
+    consola.success("ASCII strings generated successfully");
     console.log("Terminal ASCII:\n" + terminalAscii);
 
-    // Write HTML ASCII to file
-    try {
-        const htmlContent = `
-                            <!DOCTYPE html>
-                            <html lang="en">
-                            <head>
-                                <meta charset="UTF-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title>Generated ASCII Art</title>
-                                <style>
-                                    body {
-                                        font-family: 'Courier New', monospace;
-                                        background: #000;
-                                        color: #fff;
-                                        display: flex;
-                                        justify-content: center;
-                                        align-items: center;
-                                        min-height: 100vh;
-                                        margin: 0;
-                                        padding: 0px;
-                                    }
-                                    #ascii {
-                                        white-space: pre;
-                                        line-height: 1;
-                                        font-size: 8px;
-                                        letter-spacing: 0.5px;
-                                        text-align: center;
-                                    }
-                                </style>
-                            </head>
-                            <body>
-                                <div id="ascii">${ascii}</div>
-                            </body>
-                            </html>
-                            `;
-
-        writeFileSync('generated-ascii.html', htmlContent);
-        consola.success("HTML file 'generated-ascii.html' created successfully!");
-    } catch (error) {
-        consola.error("Failed to write HTML file:", error);
-    }
-
-    // Adjust font size to fit container if needed
-    // const containerWidth = window.innerWidth - 40; // Account for margins
-    // const charWidth = 8; // Approximate pixel width per character
-    // if (width * charWidth > containerWidth) {
-    // const fontSize = Math.floor(containerWidth / width);
-    // output.style.fontSize = `${fontSize}px`;
-    // }
+    return {
+        htmlString: htmlContent,
+        terminalString: terminalAscii,
+        plainTextString: plainTextAscii
+    };
 }
 
 const main = async (): Promise<void> => {
@@ -187,7 +272,8 @@ const main = async (): Promise<void> => {
     const img = new Image();
     img.src = imageData;
 
-    await processImage(img);
+    const result = await processImage(img, firstWallpaper.date, firstWallpaper.title, firstWallpaper.copyright);
+    await writeAsciiFiles(result, firstWallpaper.date, firstWallpaper.title, firstWallpaper.copyright);
     consola.success('Success');
 };
 
