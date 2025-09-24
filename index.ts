@@ -102,7 +102,7 @@ const writeAsciiFiles = async (
         // Create sanitized filename parts
         const sanitizedTitle = sanitizeFileName(title);
         const sanitizedCopyright = sanitizeFileName(copyright);
-        const baseFileName = `${sanitizedTitle}-${day}-${sanitizedCopyright}`;
+        const baseFileName = `${day}-${sanitizedTitle}-${sanitizedCopyright}`;
 
         // Create directory structure: data/year/month/
         const dirPath = join('data', year!, month!);

@@ -1,30 +1,32 @@
-# 🎨 Code of Art - ASCII Wallpaper Generator
+# Code of Art - ASCII Wallpaper Generator
 
 A fun project that transforms beautiful Bing wallpapers into stunning ASCII art! This automated system fetches daily wallpapers from Bing (via Japan region) and converts them into colorful ASCII representations in multiple formats.
 
-## ✨ What it does
+## What it does
 
-- 🌅 Fetches the latest Bing wallpaper daily
-- 🎭 Converts images to ASCII art with color preservation
-- 📁 Organizes output by date in `data/YYYY/MM/` structure
-- 🌈 Generates multiple formats: HTML, plain text, and ANSI terminal
-- 🤖 Runs automatically via GitHub Actions every day at midnight UTC
+- Fetches the latest Bing wallpaper daily
+- Converts images to ASCII art with color preservation
+- Organizes output by date in `data/YYYY/MM/` structure
+- Generates multiple formats: HTML, plain text, and ANSI terminal
+- Runs automatically via GitHub Actions every day at midnight UTC
 
-## 🖼️ Output Formats
+## Output Formats
 
 Each wallpaper generates three files:
 
 - **`.html`** - Colorful ASCII art viewable in web browsers
-- **`.txt`** - Plain text ASCII art without colors
+- **`.txt`**  - Plain text ASCII art without colors
 - **`.ansi`** - Terminal-friendly ASCII with ANSI color codes
 
-## 🚀 How to View the Art
+## How to View the Art
 
 ### Web Browser (HTML)
 ```bash
 # Serve the HTML file locally
-npx serve data/2025/09/
+bunx serve data/2025/09/
 # Then open: http://localhost:3000/filename.html
+
+# Or directly download open the HTML file
 ```
 
 ### Terminal (ANSI colors)
@@ -39,16 +41,15 @@ cat data/2025/09/filename.ansi
 cat data/2025/09/filename.txt
 ```
 
-## 🛠️ Local Development
+## Local Development
 
 ### Prerequisites
 - [Bun](https://bun.sh/) runtime
-- Node.js (for serving HTML files)
 
 ### Setup
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/nalindard/code-of-art.git
 cd code-of-art
 
 # Install dependencies
@@ -58,21 +59,21 @@ bun install
 bun start
 ```
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 code-of-art/
-├── data/                    # Generated ASCII art files
+├── data/                   # Generated ASCII art files
 │   └── YYYY/MM/            # Organized by year/month
 │       ├── *.html          # Web-viewable ASCII art
 │       ├── *.txt           # Plain text ASCII
 │       └── *.ansi          # Terminal ASCII with colors
 ├── .github/workflows/      # GitHub Actions automation
-├── index.ts               # Main ASCII generation logic
-└── package.json          # Project configuration
+├── index.ts                # Main ASCII generation logic
+└── package.json            # Project configuration
 ```
 
-## 🔧 Technical Details
+## Technical Details
 
 - **Runtime**: Bun for fast TypeScript execution
 - **Image Processing**: HTML5 Canvas API for pixel manipulation
@@ -80,7 +81,7 @@ code-of-art/
 - **Automation**: GitHub Actions with daily cron schedule
 - **Data Source**: Peapix API (Bing wallpaper proxy)
 
-## 📋 DISCLAIMER
+## DISCLAIMER
 
 ### Data Sources & Usage
 
@@ -106,14 +107,14 @@ If you are a copyright holder and would like any content removed from this repos
 ### Peapix API Usage
 
 Based on Peapix's public API documentation, this usage appears to be within acceptable limits:
-- ✅ Non-commercial use
-- ✅ Educational/personal project
-- ✅ Reasonable request frequency (1 request/day)
-- ✅ Proper attribution maintained
+- [x] Non-commercial use
+- [x] Educational/personal project
+- [x] Reasonable request frequency (1 request/day)
+- [x] Proper attribution maintained
 
 However, if you're planning to use this code for commercial purposes or high-frequency requests, please review Peapix's terms of service and consider reaching out to them directly.
 
-## 🤝 Contributing
+## Contributing
 
 Feel free to fork this project and experiment with:
 - Different ASCII character sets
@@ -121,7 +122,7 @@ Feel free to fork this project and experiment with:
 - New output formats
 - Enhanced color mapping algorithms
 
-## 📄 License
+## License
 
 This project is open source. Please respect the original copyright of the wallpaper images and use responsibly.
 
